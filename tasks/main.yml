@@ -1,0 +1,66 @@
+---
+
+# - name: Create backup directory
+#   file: 
+#     path: "{{ www_root }}/{{ item.key }}/backup"
+#     state: directory 
+#     owner: "{{ vault_backup.backup_user }}"
+#     group: sudo
+#     mode: 0755 
+#     recurse: yes
+#   with_dict: "{{ wordpress_sites }}"
+  
+# Purge uploads backups
+- name: Create uploads purge job
+  cron: 
+    name: "Purge old uploads backups" 
+    cron_file: purge
+    user: root
+    hour: 1
+    minute: 0
+    state: present
+    job: "duply /etc/duply/{{ item.key }}_uploads purge"
+  with_dict: "{{ wordpress_sites }}"
+  
+# Purge database backups
+- name: Create database purge job
+  cron: 
+    name: "Purge old database backups" 
+    cron_file: purge
+    user: root
+    hour: 2
+    minute: 0 
+    state: present
+    job: "duply /etc/duply/{{ item.key }}_database purge"  
+  with_dict: "{{ wordpress_sites }}"
+  
+- name: Create backup jobs
+  set_fact:
+    backup_user: "{{ vault_backup.backup_user }}"
+    backup_group: sudo
+    
+    backup_target_user: "{{ vault_backup.target_user }}"
+    backup_target_pass: "{{ vault_backup.target_password }}"          
+
+    backup_mysql_user: "{{ mysql_root_user }}"
+    backup_mysql_pass: "{{ mysql_root_password }}"
+    
+    # Backups are kept for 1 month by default. See Stouts.backup documentation to change this window.
+    # Make only full backups, not incremental.
+    backup_full_max_age: 8h          # Don't make a new full backup until the latest backup is at least this old. This is a safety check in case the backup runs repeatedly.
+
+    # Define the backup jobs
+    backup_profiles:
+      
+      # Backup uploads
+      - name: "{{ item.key }}_uploads"
+        schedule: 0 3 * * *
+        source: "{{ www_root }}/{{ item.key }}/shared/uploads"
+        target: "s3+http://{{ bucket_name }}/{{ item.key }}/uploads"
+
+      - name: "{{ item.key }}_database"
+        schedule: 0 4 * * *
+        source: "mysql://{{ site_env.db_name }}"
+        target: s3+http://{{ bucket_name }}/{{ item.key }}/database
+
+  with_dict: "{{ wordpress_sites }}"
