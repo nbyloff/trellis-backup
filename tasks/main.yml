@@ -56,11 +56,11 @@
       - name: "{{ item.key }}_uploads"
         schedule: 0 3 * * *
         source: "{{ www_root }}/{{ item.key }}/shared/uploads"
-        target: "s3+http://{{ bucket_name }}/{{ item.key }}/uploads"
+        target: "s3+http://{{ vault_backup.bucket_name }}/{{ item.key }}/uploads"
 
       - name: "{{ item.key }}_database"
         schedule: 0 4 * * *
         source: "mysql://{{ site_env.db_name }}"
-        target: s3+http://{{ bucket_name }}/{{ item.key }}/database
+        target: s3+http://{{ vault_backup.bucket_name }}/{{ item.key }}/database
 
   with_dict: "{{ wordpress_sites }}"

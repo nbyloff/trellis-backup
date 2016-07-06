@@ -55,8 +55,9 @@ git clone --depth=1 git@github.com:Stouts/Stouts.backup.git trellis/roles/Stouts
 ````
 vault_backup:
   backup_user: "{{ admin_user }}"
-  target_user: < YOUR_AWS_ACCESS_KEY_ID >
-  target_password: < YOUR_AWS_SECRET_ACCESS_KEY >
+  bucket_name: YOUR_S3_BUCKET_NAME
+  target_user: YOUR_AWS_ACCESS_KEY_ID
+  target_password: YOUR_AWS_SECRET_ACCESS_KEY
 ````
 
 5) Reprovision your server to add backup tasks:
